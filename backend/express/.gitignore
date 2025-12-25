@@ -1,0 +1,6 @@
+/node_modules
+/.env
+/middlewares/authClint.js
+/middlewares/verifyToken.js
+../frontend/
+../.vscode/
