@@ -7,8 +7,10 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const validatePassword = require('../utils/validatePassword');
 
-const createToken = (id, email, role) => {
-    return jwt.sign({ id, email, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+const createToken = (userId, role) => {
+    // Requirement: JWT must contain userId and role (admin/client)
+    // Keep `id` for backward compatibility with older code.
+    return jwt.sign({ id: userId, userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 exports.loginUser = async (req, res) => {
@@ -55,13 +57,12 @@ exports.loginUser = async (req, res) => {
             });
         }
  
-        const token = createToken(user._id, user.email, user.role);
+        const token = createToken(user._id, user.role);
 
         res.status(200).json({
             status: 'success',
             message: 'User logged in successfully',
             data: {
-                user,
                 token,
             },
         });
@@ -121,7 +122,7 @@ exports.registerUser = async (req, res) => {
         });
 
         const user = await newUser.save();
-        const token = createToken(user._id, user.email, user.role);
+        const token = createToken(user._id, user.role);
 
         res.status(201).json({
             status: 'success',
@@ -193,7 +194,7 @@ exports.adminLogin = async (req, res) => {
             });
         }
  
-        const token = createToken(user._id, user.email, user.role);
+        const token = createToken(user._id, user.role);
 
         res.status(200).json({
             status: 'success',
