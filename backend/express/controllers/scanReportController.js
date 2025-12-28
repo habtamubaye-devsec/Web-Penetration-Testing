@@ -170,3 +170,18 @@ exports.getAllScanReports = async (req, res) => {
     return res.status(500).json({ status: 'error', message: 'Failed to fetch scan reports', error: err.message });
   }
 };
+
+exports.getScanReportsByUser = async (req, res) => {
+  try {
+    const userId = String(req.params.userId || '').trim();
+
+    if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ status: 'failed', message: 'Invalid userId' });
+    }
+
+    const reports = await ScanReport.find({ user: userId }).sort({ createdAt: -1 });
+    return res.status(200).json({ status: 'success', data: { reports } });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: 'Failed to fetch user scan reports', error: err.message });
+  }
+};

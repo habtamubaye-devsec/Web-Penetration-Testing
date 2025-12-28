@@ -7,10 +7,8 @@ const UserSchema = new mongoose.Schema({
     role: { type: String, enum: ['admin', 'client'], default: 'client' },
     image: { 
         type: String, 
-        default: 'https://res.cloudinary.com/dwzxqbwv1/image/upload/v1746170602/hjhhrjdunjjo8tyfzgpe.jpg' 
     },
-    phone: { type: String },
-    address: { type: String },
+    imagePublicId: { type: String },
     isActive: { type: Boolean, default: true },
     resetToken: { type: String },
     tokenExpire: { type: Date },

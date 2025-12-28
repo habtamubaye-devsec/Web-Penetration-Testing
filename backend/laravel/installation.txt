@@ -1,0 +1,15 @@
+sudo apt install redis-server\nsudo systemctl enable redis-server\nsudo systemctl start redis-server
+sudo systemctl status redis-server
+sudo systemctl status redis
+sudo systemctl daemon-reload
+sudo systemctl enable laravel-worker\nsudo systemctl start laravel-worker
+sudo systemctl daemon-reload\nsudo systemctl enable laravel-worker\nsudo systemctl start laravel-worker
+sudo systemctl restart laravel-worker
+sudo systemctl stop laravel-worker
+systemctl disable redis
+systemctl start redis
+systemctl enable redis
+systemctl enable redis-server
+systemctl status redis
+sudo systemctl start laravel-worker
+sudo systemctl status laravel-worker

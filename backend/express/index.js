@@ -24,13 +24,11 @@ app.use(passport.initialize());
 // importing routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
-const adminRoutes = require("./routes/admin");
 const scanRoutes = require("./routes/scanReport");
 
 // // using routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/admin", adminRoutes);
 app.use("/api/scan", scanRoutes);
 
 app.get("/", (req, res) => {

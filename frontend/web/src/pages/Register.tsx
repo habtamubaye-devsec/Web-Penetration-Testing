@@ -9,6 +9,7 @@ import { Shield, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import SocialAuthButtons from '@/components/auth/SocialAuthButtons';
+import { PasswordInput } from '@/components/ui/password-input';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -40,7 +41,7 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name || !email || !password || !confirmPassword) {
       toast({
         title: "Error",
@@ -49,7 +50,7 @@ export default function Register() {
       });
       return;
     }
-    
+
     if (password !== confirmPassword) {
       toast({
         title: "Error",
@@ -58,9 +59,9 @@ export default function Register() {
       });
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       await register(name, email, password);
       navigate('/dashboard');
@@ -76,7 +77,7 @@ export default function Register() {
         <div className="flex justify-center mb-6">
           <Shield className="h-12 w-12 text-primary" />
         </div>
-        
+
         <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">
@@ -86,13 +87,13 @@ export default function Register() {
               Enter your details to create a new account
             </CardDescription>
           </CardHeader>
-          
+
           <CardContent>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <SocialAuthButtons disabled={isSubmitting} />
               </div>
-              
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t" />
@@ -103,38 +104,37 @@ export default function Register() {
                   </span>
                 </div>
               </div>
-              
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="Your name" 
+                  <Input
+                    id="name"
+                    placeholder="Your name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={isSubmitting}
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="you@example.com" 
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isSubmitting}
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
+                  <PasswordInput
+                    id="password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -142,12 +142,11 @@ export default function Register() {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input 
-                    id="confirmPassword" 
-                    type="password" 
+                  <PasswordInput
+                    id="confirmPassword"
                     placeholder="••••••••"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -155,7 +154,7 @@ export default function Register() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? (
@@ -171,7 +170,7 @@ export default function Register() {
               </form>
             </div>
           </CardContent>
-          
+
           <CardFooter>
             <div className="text-center w-full">
               <p className="text-sm text-muted-foreground">

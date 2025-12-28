@@ -1,4 +1,9 @@
-import axios, { type AxiosInstance, type AxiosResponse } from "axios";
+import axios, {
+  type AxiosInstance,
+  type AxiosResponse,
+  type AxiosRequestHeaders,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 type StoredAuth = {
   token?: string;
@@ -21,8 +26,16 @@ const getToken = (): string | null => {
     // Backward compatibility with older storage shape
     const legacy = localStorage.getItem("securityUser");
     if (legacy) {
-      const parsed = JSON.parse(legacy) as any;
-      if (typeof parsed?.token === "string" && parsed.token.trim()) return parsed.token;
+      const parsed = JSON.parse(legacy) as unknown;
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        "token" in parsed &&
+        typeof (parsed as { token?: unknown }).token === "string" &&
+        (parsed as { token: string }).token.trim()
+      ) {
+        return (parsed as { token: string }).token;
+      }
     }
   } catch {
     // ignore
@@ -33,19 +46,36 @@ const getToken = (): string | null => {
 
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? "/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  timeout: 30_000,
+  // Do not force Content-Type globally.
+  // Axios will set the correct boundary for FormData automatically.
+  headers: {},
 });
 
 api.interceptors.request.use(
-  (config) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = getToken();
     if (token) {
-      // Axios v1 headers typing can be AxiosHeaders; cast for compatibility.
-      (config.headers as any) = config.headers ?? {};
-      (config.headers as any).Authorization = `Bearer ${token}`;
+      const headers = (config.headers ?? {}) as AxiosRequestHeaders;
+      headers.Authorization = `Bearer ${token}`;
+      config.headers = headers;
     }
+
+    const headers = (config.headers ?? {}) as AxiosRequestHeaders;
+
+    // If sending FormData, let the browser/axios set multipart boundary.
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      if (headers["Content-Type"]) delete headers["Content-Type"];
+      if (headers["content-type"]) delete (headers as any)["content-type"];
+      config.headers = headers;
+      return config;
+    }
+
+    // Default JSON Content-Type for typical API calls.
+    if (!headers["Content-Type"] && !(headers as any)["content-type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+    config.headers = headers;
     return config;
   },
   (error) => Promise.reject(error)
@@ -54,7 +84,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {
-    const originalRequest = error?.config as any;
+    const originalRequest = error?.config as (Record<string, unknown> & { _retry?: boolean }) | undefined;
 
     if (error?.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;

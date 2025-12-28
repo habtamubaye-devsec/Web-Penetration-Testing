@@ -1,20 +1,5 @@
-/**
- * validateUser.js
- *
- * Exports TWO middlewares:
- *  1) validateUser  -> checks login (valid Bearer JWT) and loads the user
- *  2) authorizeUser -> checks role (admin/client) AFTER validateUser ran
- *
- * Usage examples:
- *   const { validateUser, authorizeUser } = require('../middlewares/validateUser');
- *
- *   router.get('/admin-only', validateUser, authorizeUser('admin'), handler)
- *   router.get('/client-or-admin', validateUser, authorizeUser('client','admin'), handler)
- */
-
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const Admin = require('../models/Admin');
 
 const normalizeRoles = (roles) => {
   if (!roles) return [];
@@ -49,8 +34,8 @@ const validateUser = async (req, res, next) => {
       return res.status(401).json({ status: 'failed', message: 'Unauthorized' });
     }
 
-    const model = role === 'admin' ? Admin : User;
-    const user = await model.findById(userId).select('-password');
+    // Single collection supports both roles (admin/client)
+    const user = await User.findById(userId).select('-password');
     if (!user) {
       return res.status(401).json({ status: 'failed', message: 'Unauthorized' });
     }

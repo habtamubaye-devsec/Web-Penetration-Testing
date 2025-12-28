@@ -11,6 +11,9 @@ router.get('/', validateUser, authorizeUser('admin', 'client'), scanReportContro
 // Admin: list all scan reports
 router.get('/admin/all', validateUser, authorizeUser('admin'), scanReportController.getAllScanReports);
 
+// Admin: list scan reports by user id
+router.get('/admin/user/:userId', validateUser, authorizeUser('admin'), scanReportController.getScanReportsByUser);
+
 // Proxy scanner status/result (also stored on the ScanReport)
 router.get('/status/:scanId', validateUser, authorizeUser('admin', 'client'), scanReportController.getScanStatus);
 router.get('/result/:scanId', validateUser, authorizeUser('admin', 'client'), scanReportController.getScanResult);

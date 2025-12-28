@@ -31,6 +31,7 @@ import OAuthCallback from "./pages/OAuthCallback";
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminScans from "./pages/admin/AdminScans";
 import AdminScanDetail from "./pages/admin/AdminScanDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -86,6 +87,7 @@ const App = () => (
               >
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/users/:id" element={<AdminUserDetail />} />
                 <Route path="/admin/scans" element={<AdminScans />} />
                 <Route path="/admin/scans/:scanId" element={<AdminScanDetail />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />

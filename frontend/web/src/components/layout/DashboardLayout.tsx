@@ -37,7 +37,7 @@ export default function DashboardLayout() {
       </div>
 
       {/* Sidebar */}
-      <div 
+      <div
         className={cn(
           "fixed inset-y-0 left-0 z-30 w-64 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -49,7 +49,7 @@ export default function DashboardLayout() {
               <Shield className="h-8 w-8 text-sidebar-primary" />
               <span className="text-xl font-bold ">AI Enhanced Penetration Testing</span>
             </SidebarHeader>
-            
+
             <SidebarContent className="px-3 py-4">
               <div className="space-y-1">
                 <Link
@@ -59,7 +59,7 @@ export default function DashboardLayout() {
                   <Home className="h-5 w-5" />
                   <span>Dashboard</span>
                 </Link>
-                
+
                 <Link
                   to="/scan"
                   className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent"
@@ -67,7 +67,7 @@ export default function DashboardLayout() {
                   <ShieldAlert className="h-5 w-5" />
                   <span>New Scan</span>
                 </Link>
-                
+
                 <Link
                   to="/scan-history"
                   className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent"
@@ -82,7 +82,7 @@ export default function DashboardLayout() {
                     <div className="px-3 py-1 text-xs font-semibold text-sidebar-foreground opacity-70">
                       Admin
                     </div>
-                    
+
                     <Link
                       to="/admin"
                       className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent"
@@ -90,7 +90,7 @@ export default function DashboardLayout() {
                       <BarChart className="h-5 w-5" />
                       <span>Overview</span>
                     </Link>
-                    
+
                     <Link
                       to="/admin/users"
                       className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent"
@@ -98,7 +98,7 @@ export default function DashboardLayout() {
                       <User className="h-5 w-5" />
                       <span>Users</span>
                     </Link>
-                    
+
                     <Link
                       to="/admin/scans"
                       className="flex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent"
@@ -110,7 +110,7 @@ export default function DashboardLayout() {
                 )}
               </div>
             </SidebarContent>
-            
+
             <SidebarFooter className="p-4 border-t border-sidebar-border">
               <div className="flex items-center justify-between">
                 <Link
@@ -120,10 +120,10 @@ export default function DashboardLayout() {
                   <User className="h-5 w-5" />
                   <span>Profile</span>
                 </Link>
-                
+
                 <div className="flex space-x-2">
                   <ThemeToggle />
-                  
+
                   <Button
                     variant="outline"
                     size="icon"
@@ -151,7 +151,7 @@ export default function DashboardLayout() {
 
       {/* Backdrop for mobile sidebar */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />

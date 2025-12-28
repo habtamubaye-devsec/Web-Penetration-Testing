@@ -36,14 +36,14 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      
+
       {/* Features section */}
       <section className="py-16 bg-secondary/5">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">
             Comprehensive Security Features
           </h2>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-card rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
@@ -54,7 +54,7 @@ export default function Landing() {
                 Detect OWASP Top 10 vulnerabilities with our advanced scanning engine.
               </p>
             </div>
-            
+
             <div className="bg-card rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <Lock className="h-6 w-6 text-primary" />
@@ -64,7 +64,7 @@ export default function Landing() {
                 Identify weak cipher suites, outdated protocols, and certificate issues.
               </p>
             </div>
-            
+
             <div className="bg-card rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <FileText className="h-6 w-6 text-primary" />
@@ -74,7 +74,7 @@ export default function Landing() {
                 Get comprehensive reports with remediation advice for all identified issues.
               </p>
             </div>
-            
+
             <div className="bg-card rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <ShieldCheck className="h-6 w-6 text-primary" />
@@ -84,7 +84,7 @@ export default function Landing() {
                 Detect WAFs and other defensive measures protecting your applications.
               </p>
             </div>
-            
+
             <div className="bg-card rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6 text-primary" />
@@ -94,7 +94,7 @@ export default function Landing() {
                 Analyze security-related HTTP headers to improve your application's security posture.
               </p>
             </div>
-            
+
             <div className="bg-card rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <ShieldAlert className="h-6 w-6 text-primary" />
@@ -107,7 +107,7 @@ export default function Landing() {
           </div>
         </div>
       </section>
-      
+
       {/* CTA section */}
       <section className="py-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">

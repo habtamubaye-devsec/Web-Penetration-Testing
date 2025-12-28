@@ -1,5 +1,4 @@
 const User = require('../models/User.js');
-const Admin = require('../models/Admin.js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
@@ -32,11 +31,20 @@ exports.loginUser = async (req, res) => {
             });
         }
 
+        // Single collection supports both roles: role = 'admin' or 'client'
         const user = await User.findOne({ email: normalizedEmail });
+
         if (!user) {
             return res.status(401).json({
                 status: 'failed',
-                message: 'User does not exist',
+                message: 'Invalid credentials',
+            });
+        }
+
+        if (user.isActive === false) {
+            return res.status(403).json({
+                status: 'failed',
+                message: 'Account is blocked',
             });
         }
 
@@ -54,12 +62,13 @@ exports.loginUser = async (req, res) => {
                 message: 'Invalid credentials',
             });
         }
- 
-        const token = createToken(user._id, user.role);
 
-        res.status(200).json({
+        const role = user.role || 'client';
+        const token = createToken(user._id, role);
+
+        return res.status(200).json({
             status: 'success',
-            message: 'User logged in successfully',
+            message: 'Logged in successfully',
             data: {
                 token,
             },
@@ -67,7 +76,7 @@ exports.loginUser = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({
+        return res.status(500).json({
             status: 'failed',
             message: err.message,
         });
@@ -148,70 +157,6 @@ exports.registerUser = async (req, res) => {
     }
 };
 
-exports.adminLogin = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        if (!email || !password) {
-            return res.status(400).json({
-                status: 'failed',
-                message: 'Please provide email and password',
-            });
-        }
-
-        const normalizedEmail = String(email).trim().toLowerCase();
-        const passwordString = String(password);
-
-        if (!validator.isEmail(normalizedEmail)) {
-            return res.status(400).json({
-                status: 'failed',
-                message: 'Please provide a valid email address',
-            });
-        }
-
-        const user = await Admin.findOne({ email: normalizedEmail });
-        if (!user) {
-            return res.status(401).json({
-                status: 'failed',
-                message: 'Admin does not exist',
-            });
-        }
-
-        if (!user.password) {
-            return res.status(401).json({
-                status: 'failed',
-                message: 'Invalid credentials',
-            });
-        }
-
-        const isMatch = await bcrypt.compare(passwordString, user.password);
-        if (!isMatch) {
-            return res.status(401).json({
-                status: 'failed',
-                message: 'Invalid credentials',
-            });
-        }
- 
-        const token = createToken(user._id, user.role);
-
-        res.status(200).json({
-            status: 'success',
-            message: 'Admin logged in successfully',
-            data: {
-                user,
-                token,
-            },
-        });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({
-            status: 'failed',
-            message: 'An internal server error occurred' + err.message,
-        });
-    }
-};
-
-
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -276,11 +221,10 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-
 exports.resetPassword = async (req, res) => {
     try {
         const rawToken = String(req.params.token || '').trim();
-        const { password } = req.body;
+        const password = String(req.body?.password || '');
 
         if (!rawToken) {
             return res.status(400).json({ message: 'Invalid or expired token' });
@@ -317,7 +261,7 @@ exports.resetPassword = async (req, res) => {
         return res.status(200).json({ message: 'Password reset successful' });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ message: 'Internal Server Error' });
     }
 };
 
