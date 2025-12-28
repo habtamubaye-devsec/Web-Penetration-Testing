@@ -118,64 +118,38 @@ exports.deleteUser = async (req, res) => {
 }
 
 
-exports.scanStatus = async(req,res)=>{
-    const url = "scan_network_update_123";
-    try {
-        const response = await axios.get(`http://192.168.216.2:8000/api/scan/status/${url}`);
-        res.status(200).json({
-          status: 'success',
-          data: response.data
-        });
-      } catch (error) {
-        res.status(500).json({
-          status: 'error',
-          message: 'Failed to fetch scan status',
-          error: error.message
-        });
-      }
-  }
 
-exports.sendScanRequst = async(req,res)=>{
-  const url = req.body.url;
-  console.log("url: ",url);
-  const payload = {
-      url:url,
-      scan_type: 'full',
-      scan_id: 'scan_network_update_123',
-      callback_url: 'https://your-callback-url.com/results'
-    };
-    console.log("url 2: ",url);
-    try {
-      const response = await axios.post('http://192.168.216.2:8000/api/scan', payload, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      console.log("url 3: ",url);
-      res.status(200).json({
-        status: 'success',
-        data: response.data
-      });
-    } catch (error) {
-      res.status(500).json({
-        status: 'error',
-        message: 'Failed to send scan request',
-        error: error.message
-      });
-    }
-}
+exports.toggleUserStatus = async (req, res) => {
+        try {
+                const { userId, status } = req.body || {};
 
-exports.result = async(req,res)=>{
-    const url = "scan_network_update_123";
-    try {
-        const response = await axios.get(`http://192.168.216.2:8000/api/scan/result/${url}`);
-        res.status(200).json({
-          status: 'success',
-          data: response.data
-        });
-      } catch (error) {
-        res.status(500).json({
-          status: 'error',
-          message: 'Failed to fetch scan status',
-          error: error.message
-        });
-      }
-}
+                if (!userId || typeof userId !== 'string' || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+                        return res.status(400).json({ status: 'fail', message: 'Invalid userId' });
+                }
+
+                const normalizedStatus = String(status || '').trim().toLowerCase();
+                if (!['active', 'blocked'].includes(normalizedStatus)) {
+                        return res.status(400).json({ status: 'fail', message: 'Status must be active or blocked' });
+                }
+
+                const isActive = normalizedStatus === 'active';
+
+                const user = await User.findByIdAndUpdate(
+                        userId,
+                        { $set: { isActive } },
+                        { new: true, runValidators: true }
+                ).select('-password');
+
+                if (!user) {
+                        return res.status(404).json({ status: 'fail', message: 'User not found' });
+                }
+
+                return res.status(200).json({
+                        status: 'success',
+                        message: 'User status updated successfully',
+                        user,
+                });
+        } catch (err) {
+                return res.status(500).json({ status: 'error', message: 'Failed to update user status', error: err.message });
+        }
+};

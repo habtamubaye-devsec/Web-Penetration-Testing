@@ -3,13 +3,11 @@ const Admin = require('../models/Admin.js');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const validator = require('validator');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const validatePassword = require('../utils/validatePassword');
+const sendEmail = require('../utils/sendEmail');
 
 const createToken = (userId, role) => {
-    // Requirement: JWT must contain userId and role (admin/client)
-    // Keep `id` for backward compatibility with older code.
     return jwt.sign({ id: userId, userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
@@ -217,41 +215,61 @@ exports.adminLogin = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
-        if (!email || !validator.isEmail(email)) {
+        const normalizedEmail = String(email || '').trim().toLowerCase();
+
+        if (!normalizedEmail || !validator.isEmail(normalizedEmail)) {
             return res.status(400).json({ message: 'Valid email is required.' });
         }
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: normalizedEmail });
+
+        // Avoid account enumeration: always respond with a generic success message.
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
         }
 
-        const token = crypto.randomBytes(32).toString('hex');
-        user.resetToken = token;
-        user.tokenExpire = Date.now() + 3600000; // 1 hour
-        await user.save( { validateBeforeSave: false });
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-        // const resetUrl = `http://localhost:${process.env.PORT}/api/auth/reset-password/${encodeURIComponent(token)}`;
-        const resetUrl = `http://localhost:8080/reset-password/${encodeURIComponent(token)}`;
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
+        user.resetToken = tokenHash;
+        user.tokenExpire = new Date(Date.now() + 3600000); // 1 hour
+        await user.save({ validateBeforeSave: false });
 
-        const mailOptions = {
-            from: 'Your App <no-reply@yourapp.com>',
-            to: user.email,
-            subject: 'Password Reset Request',
-            text: `You requested a password reset. Click here: ${resetUrl}`,
-        };
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:8080';
+        const resetUrl = `${clientUrl.replace(/\/$/, '')}/reset-password/${encodeURIComponent(rawToken)}`;
 
-        await transporter.sendMail(mailOptions);
-        console.log('Generated Token:', token);
-        console.log('User Document After Save:', user);
-        res.status(200).json({ message: 'Password reset link sent.' });
+        const isDev = String(process.env.NODE_ENV || '').toLowerCase() !== 'production';
+        console.log(user.email, resetUrl);
+
+        try {
+            const result = await sendEmail({
+                to: user.email,
+                subject: 'Password Reset Request',
+                text: `You requested a password reset. Click this link to set a new password: ${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+            });
+
+            if (isDev && result?.mode === 'log') {
+                return res.status(200).json({
+                    message: 'Email sending is disabled (EMAIL_MODE=log). Use the resetUrl to continue.',
+                    resetUrl,
+                });
+            }
+        } catch (mailErr) {
+            if (isDev) {
+                return res.status(200).json({
+                    message: `Email could not be sent from this server (${mailErr?.message || 'unknown error'}). Use resetUrl to continue in dev.`,
+                    resetUrl,
+                });
+            }
+
+            user.resetToken = undefined;
+            user.tokenExpire = undefined;
+            await user.save({ validateBeforeSave: false });
+
+            return res.status(500).json({ message: 'Failed to send reset email' });
+        }
+
+        return res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Internal Server Error' });
@@ -261,21 +279,22 @@ exports.forgotPassword = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
     try {
-        const  token  = decodeURIComponent(req.params.token);
+        const rawToken = String(req.params.token || '').trim();
         const { password } = req.body;
 
-        console.log('Token from request:', token);
+        if (!rawToken) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required' });
+        }
+
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
 
         const user = await User.findOne({
-            resetToken: token,
-            tokenExpire: { $gt: Date.now() },
+            resetToken: tokenHash,
+            tokenExpire: { $gt: new Date() },
         });
-        console.log('Query conditions:', {
-            resetToken: token,
-            tokenExpire: { $gt: Date.now() },
-        });
-
-        console.log('User found:', user);
 
         if (!user) {
             return res.status(400).json({ message: 'Invalid or expired token' });
@@ -294,9 +313,8 @@ exports.resetPassword = async (req, res) => {
         user.resetToken = undefined;
         user.tokenExpire = undefined;
         await user.save();
-        console.log('Token from URL:', token);
-        console.log('User Found in DB:', user)
-        res.status(200).json({ message: 'Password reset successful' });
+
+        return res.status(200).json({ message: 'Password reset successful' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Internal Server Error' });

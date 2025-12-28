@@ -65,26 +65,4 @@ router.post('/admin-login', authController.adminLogin);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password/:token', authController.resetPassword);
 
-// router.get('/reset-password/:token', (req, res) => {
-//     const { token } = req.params;
-//     console.log('Reset password route hit with token:', token);
-//     res.send(`
-//         <html>
-//             <body>
-//                 <h1>Reset Password</h1>
-//                 <form action="/api/auth/reset-password/${encodeURIComponent(token)}" method="POST">
-//                     <input type="password" name="password" placeholder="Enter new password" required />
-//                     <button type="submit">Reset Password</button>
-//                 </form>
-//             </body>
-//         </html>
-//     `);
-
-    // Option 2: Redirect to frontend (if applicable)
-    // res.redirect(`http://your-frontend-url/reset-password/${token}`);
-
-    // Option 3: Respond with a JSON message (for API-only backend)
-    // res.status(200).json({ message: 'Reset password link is valid', token });
-// });
-
 module.exports = router;
