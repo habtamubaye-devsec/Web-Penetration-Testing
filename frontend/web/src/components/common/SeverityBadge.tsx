@@ -15,7 +15,7 @@ export default function SeverityBadge({ severity, className }: SeverityBadgeProp
       case 'high':
         return 'bg-status-danger text-white';
       case 'medium':
-        return 'bg-status-warning text-black';
+        return 'bg-status-warning text-white';
       case 'low':
         return 'bg-status-success text-white';
       case 'info':

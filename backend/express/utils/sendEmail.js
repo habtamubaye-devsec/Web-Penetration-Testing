@@ -34,7 +34,7 @@ const getTransportOptions = () => {
 };
 
 /**
- * @param {{to: string, subject: string, text?: string, html?: string, from?: string}} payload
+ * @param {{to: string, subject: string, text?: string, html?: string, from?: string, attachments?: any[]}} payload
  */
 const sendEmail = async (payload) => {
   const mode = getEmailMode();
@@ -54,6 +54,7 @@ const sendEmail = async (payload) => {
     subject: payload.subject,
     ...(payload.text ? { text: payload.text } : {}),
     ...(payload.html ? { html: payload.html } : {}),
+    ...(payload.attachments ? { attachments: payload.attachments } : {}),
   };
 
   const info = await transporter.sendMail(mailOptions);

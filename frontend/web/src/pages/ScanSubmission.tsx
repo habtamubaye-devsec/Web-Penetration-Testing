@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -23,87 +23,122 @@ import {
   AlertTriangle,
   FileCode,
   Loader2,
-  Info
+  Info,
+  Globe,
+  Activity,
+  Clock
 } from 'lucide-react';
 import { submitScan } from '@/api-service/scan.service';
+import { getScanningTools, getScanModes, type ScanningTool, type ScanMode } from '@/api-service/scanning-management.service';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ScanSubmission() {
   const [url, setUrl] = useState('');
-  const [scanType, setScanType] = useState('basic');
-  const [customOptions, setCustomOptions] = useState({
-    network: false,
-    ssl: false,
-    firewall: false,
-    http: false,
-    nse: false,
-  });
+  const [modes, setModes] = useState<ScanMode[]>([]);
+  const [tools, setTools] = useState<ScanningTool[]>([]);
+  const [selectedModeId, setSelectedModeId] = useState<string>('');
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleCustomOptionChange = (option: keyof typeof customOptions) => {
-    setCustomOptions(prev => ({
-      ...prev,
-      [option]: !prev[option]
-    }));
+  const handleModeSelect = (modeId: string) => {
+    setSelectedModeId(modeId);
+
+    const nextMode = modes.find((m) => m._id === modeId);
+    if (nextMode && nextMode.scanType !== 'custom') {
+      setSelectedTools([]);
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [modesRes, toolsRes] = await Promise.all([
+          getScanModes(),
+          getScanningTools()
+        ]);
+        setModes(modesRes.data.data);
+        setTools(toolsRes.data.data);
+        if (modesRes.data.data.length > 0) {
+          setSelectedModeId(modesRes.data.data[0]._id);
+        }
+      } catch (error) {
+        console.error('Error fetching scan configuration:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load scan options. Please refresh.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleToolToggle = (toolId: string) => {
+    if (!toolId) return;
+    setSelectedTools((prev) =>
+      prev.includes(toolId) ? prev.filter((id) => id !== toolId) : [...prev, toolId]
+    );
+  };
+
+  const handleToolCheckedChange = (toolId: string, checked: boolean | "indeterminate") => {
+    if (!toolId) return;
+    if (checked === "indeterminate") return;
+
+    setSelectedTools((prev) => {
+      const isSelected = prev.includes(toolId);
+      if (checked && !isSelected) return [...prev, toolId];
+      if (!checked && isSelected) return prev.filter((id) => id !== toolId);
+      return prev;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!url) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid URL",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Please enter a target URL", variant: "destructive" });
       return;
     }
 
-    // Validate URL
     try {
       new URL(url);
-    } catch (error) {
-      toast({
-        title: "Invalid URL",
-        description: "Please enter a valid URL including http:// or https://",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Invalid URL", description: "Include http:// or https://", variant: "destructive" });
       return;
     }
 
-    // Validate custom options
-    if (scanType === 'custom' && !Object.values(customOptions).some(Boolean)) {
-      toast({
-        title: "Error",
-        description: "Please select at least one custom scan option",
-        variant: "destructive",
-      });
+    const mode = modes.find(m => m._id === selectedModeId);
+    if (!mode) return;
+
+    if (mode.scanType === 'custom' && selectedTools.length === 0) {
+      toast({ title: "Error", description: "Select at least one tool for custom scan", variant: "destructive" });
       return;
     }
 
     setSubmitting(true);
-
     try {
       const scanData = {
         url,
-        type: scanType,
-        options: scanType === 'custom' ? customOptions : {},
+        scan_mode_id: selectedModeId,
+        custom_tools: mode.scanType === 'custom' ? selectedTools : undefined
       };
 
-      const response = await submitScan(scanData);
+      await submitScan(scanData);
 
       toast({
-        title: "Scan submitted successfully",
-        description: "You will be notified when your scan is complete",
+        title: "Scan Queued",
+        description: "Your security assessment has been scheduled.",
       });
       navigate('/scan-history');
-    } catch (error) {
-      console.error('Error submitting scan:', error);
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to submit scan. Please try again.",
+        title: "Submission Failed",
+        description: error.response?.data?.message || "Internal server error",
         variant: "destructive",
       });
     } finally {
@@ -111,223 +146,212 @@ export default function ScanSubmission() {
     }
   };
 
-  const ScanTypeOption = ({
-    value,
-    icon: Icon,
-    iconColor,
-    title,
-    description,
-    children
-  }: {
-    value: string;
-    icon: React.ElementType;
-    iconColor: string;
-    title: string;
-    description: string;
-    children?: React.ReactNode;
-  }) => (
-    <div className={`flex items-start space-x-3 border rounded-lg p-5 transition-all duration-200 cursor-pointer ${scanType === value ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/50 hover:bg-muted/30'
-      }`}>
-      <RadioGroupItem value={value} id={value} className="mt-1" />
-      <div className="flex-1">
-        <Label htmlFor={value} className="text-base font-semibold flex items-center cursor-pointer gap-2 mb-2">
-          <Icon className={`h-5 w-5 ${iconColor}`} />
-          {title}
-        </Label>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {description}
-        </p>
-        {children}
+  const getIconForTool = (type: string) => {
+    switch (type) {
+      case 'network': return Network;
+      case 'ssl': return Lock;
+      case 'waf': return Shield;
+      case 'http': return AlertTriangle;
+      case 'nse': return FileCode;
+      default: return Activity;
+    }
+  };
+
+  const getIconForMode = (type: string) => {
+    switch (type) {
+      case 'fast': return ShieldCheck;
+      case 'full': return Shield;
+      case 'custom': return ShieldAlert;
+      default: return Globe;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground animate-pulse">Initializing security scanner...</p>
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (modes.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh] space-y-6 text-center">
+        <div className="p-4 bg-muted rounded-full">
+          <ShieldAlert className="h-12 w-12 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-2xl font-bold">No Scan Modes Available</h3>
+          <p className="text-muted-foreground max-w-xs">
+            The administrator hasn't configured any scanning modes yet. Please check back later.
+          </p>
+        </div>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Retry Connection
+        </Button>
+      </div>
+    );
+  }
+
+  const currentMode = modes.find(m => m._id === selectedModeId);
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-4xl font-bold tracking-tight">New Security Scan</h1>
-        <p className="text-muted-foreground mt-2 text-lg">
-          Configure and submit a new security scan
+    <div className="animate-slide-up flex flex-col gap-4">
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          New Security Scan
+        </h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          Configure and initiate a security assessment.
         </p>
       </div>
 
-      <Card className="max-w-4xl mx-auto border-border/50 shadow-md">
+      <Card className="border-border/50 shadow-lg overflow-hidden bg-card/50 backdrop-blur-sm">
         <form onSubmit={handleSubmit}>
-          <CardHeader className="border-b bg-muted/30">
-            <CardTitle className="text-2xl">Scan Configuration</CardTitle>
-            <CardDescription className="text-base mt-1.5">
-              Enter the target URL and select your scan options
+          <CardHeader className="border-b bg-muted/20 py-4">
+            <div className="flex items-center gap-3 mb-2">
+              <Activity className="h-5 w-5 text-primary" />
+              <CardTitle className="text-xl">Configuration</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
+              Specify your target and choose an assessment depth.
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-8 pt-8">
+          <CardContent className="space-y-6 pt-6 px-4 sm:px-6">
             {/* Target URL */}
-            <div className="space-y-3">
-              <Label htmlFor="url" className="text-base font-semibold">Target URL</Label>
-              <Input
-                id="url"
-                placeholder="https://example.com"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                disabled={submitting}
-                required
-                className="h-12 text-base focus-visible-ring"
-              />
-              <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-blue-900 dark:text-blue-100">
-                  Enter the full URL including http:// or https://
+            <div className="space-y-2">
+              <Label htmlFor="url" className="text-sm font-semibold flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                Target URL
+              </Label>
+              <div className="relative">
+                <Input
+                  id="url"
+                  placeholder="https://example.com"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  disabled={submitting}
+                  required
+                  className="h-11 text-sm sm:text-base pl-4 border-2 focus-visible:ring-primary/30 rounded-xl"
+                />
+              </div>
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                <Info className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-foreground/80 leading-relaxed">
+                  Enter the fully qualified domain name including the protocol (http/https).
+                  Ensure you have explicit authorization to scan this target.
                 </p>
               </div>
             </div>
 
-            {/* Scan Type */}
-            <div className="space-y-4">
-              <Label className="text-base font-semibold">Scan Type</Label>
+            {/* Scan Modes */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">Assessment Mode</Label>
               <RadioGroup
-                value={scanType}
-                onValueChange={setScanType}
-                className="space-y-3"
+                value={selectedModeId}
+                onValueChange={handleModeSelect}
+                className="grid gap-3"
               >
-                <ScanTypeOption
-                  value="basic"
-                  icon={ShieldCheck}
-                  iconColor="text-blue-600 dark:text-blue-400"
-                  title="Basic Scan"
-                  description="Quick security assessment with minimal server load. Completes in 2-5 minutes."
-                />
+                {modes.map((mode) => {
+                  const Icon = getIconForMode(mode.scanType);
+                  const isSelected = selectedModeId === mode._id;
 
-                <ScanTypeOption
-                  value="full"
-                  icon={Shield}
-                  iconColor="text-primary"
-                  title="Full Scan"
-                  description="Comprehensive security testing including all vulnerability types. May take 10-20 minutes."
-                />
+                  return (
+                    <div
+                      key={mode._id}
+                      className={`relative border-2 rounded-2xl transition-all duration-300 group ${isSelected
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5'
+                        : 'border-border/50 hover:border-primary/40 hover:bg-muted/30'
+                        }`}
+                    >
+                      <Label
+                        htmlFor={mode._id}
+                        className="flex items-start space-x-4 p-4 cursor-pointer"
+                      >
+                        <RadioGroupItem value={mode._id} id={mode._id} className="mt-1.5" />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-base font-semibold flex items-center gap-2">
+                              <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-muted-foreground group-hover:text-primary/70'}`} />
+                              {mode.name}
+                            </div>
+                            {mode.estimatedTime && (
+                              <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-muted text-muted-foreground flex items-center gap-1.5">
+                                <Clock className="h-3.5 w-3.5" />
+                                {mode.estimatedTime}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground pr-4">
+                            {mode.description}
+                          </p>
+                        </div>
+                      </Label>
 
-                <ScanTypeOption
-                  value="custom"
-                  icon={ShieldAlert}
-                  iconColor="text-amber-600 dark:text-amber-400"
-                  title="Custom Scan"
-                  description="Select specific test categories to include in your scan."
-                >
-                  {scanType === 'custom' && (
-                    <div className="mt-5 space-y-4 p-4 border-t border-border">
-                      <p className="text-sm font-medium text-muted-foreground">Select scan options:</p>
+                      {/* Custom Tools Subset (kept OUTSIDE the label so it can't interfere with mode selection) */}
+                      {isSelected && mode.scanType === 'custom' && (
+                        <div className="px-4 pb-4 mt-2 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                          <div className="h-px bg-primary/20 w-full" />
+                          <p className="text-sm font-bold uppercase tracking-widest text-primary/80">Select Components:</p>
 
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors">
-                          <Checkbox
-                            id="network"
-                            checked={customOptions.network}
-                            onCheckedChange={() => handleCustomOptionChange('network')}
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="network" className="flex items-center cursor-pointer font-medium gap-2">
-                              <Network className="h-4 w-4 text-primary" />
-                              Network Scanning
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Port scanning and service discovery
-                            </p>
+                          <div className="grid gap-3 sm:grid-cols-2 max-h-64 overflow-auto pr-1">
+                            {tools.filter((t) => Boolean(t?._id)).map((tool) => {
+                              const ToolIcon = getIconForTool(tool.type);
+                              const isChecked = selectedTools.includes(tool._id);
+                              return (
+                                <div
+                                  key={tool._id}
+                                  className={`flex items-start space-x-4 p-3 rounded-xl border-2 transition-all duration-200 ${isChecked
+                                    ? 'border-primary/60 bg-primary/10'
+                                    : 'border-border/40 hover:border-primary/30 bg-background/50'
+                                    }`}
+                                >
+                                  <Checkbox
+                                    id={tool._id}
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => handleToolCheckedChange(tool._id, checked)}
+                                    className="mt-1"
+                                  />
+                                  <div>
+                                    <Label htmlFor={tool._id} className="font-bold flex items-center gap-2 cursor-pointer">
+                                      <ToolIcon className="h-4 w-4 text-primary" />
+                                      {tool.name}
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                                      {tool.description}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-
-                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors">
-                          <Checkbox
-                            id="ssl"
-                            checked={customOptions.ssl}
-                            onCheckedChange={() => handleCustomOptionChange('ssl')}
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="ssl" className="flex items-center cursor-pointer font-medium gap-2">
-                              <Lock className="h-4 w-4 text-primary" />
-                              SSL/TLS Analysis
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Certificate verification and cipher suite checks
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors">
-                          <Checkbox
-                            id="firewall"
-                            checked={customOptions.firewall}
-                            onCheckedChange={() => handleCustomOptionChange('firewall')}
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="firewall" className="flex items-center cursor-pointer font-medium gap-2">
-                              <Shield className="h-4 w-4 text-primary" />
-                              Firewall Detection
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              WAF fingerprinting and evasion testing
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors">
-                          <Checkbox
-                            id="http"
-                            checked={customOptions.http}
-                            onCheckedChange={() => handleCustomOptionChange('http')}
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="http" className="flex items-center cursor-pointer font-medium gap-2">
-                              <AlertTriangle className="h-4 w-4 text-primary" />
-                              HTTP Security
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Security header analysis and misconfiguration checks
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-start space-x-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors sm:col-span-2">
-                          <Checkbox
-                            id="nse"
-                            checked={customOptions.nse}
-                            onCheckedChange={() => handleCustomOptionChange('nse')}
-                          />
-                          <div className="flex-1">
-                            <Label htmlFor="nse" className="flex items-center cursor-pointer font-medium gap-2">
-                              <FileCode className="h-4 w-4 text-primary" />
-                              NSE Scripts
-                            </Label>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Run specialized Nmap scripts for deeper analysis
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </ScanTypeOption>
+                  );
+                })}
               </RadioGroup>
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col sm:flex-row justify-between gap-4 border-t bg-muted/30 p-6">
-            <p className="text-sm text-muted-foreground">
-              By submitting this scan, you confirm that you have permission to test this target.
-            </p>
+          <CardFooter className="flex flex-col sm:flex-row justify-end items-center gap-4 border-t bg-muted/10 p-4 sm:p-6">
             <Button
               type="submit"
               disabled={submitting}
               size="lg"
-              className="btn-scale shadow-md shadow-primary/20 w-full sm:w-auto"
+              className="h-11 px-8 text-sm sm:text-base font-semibold rounded-xl shadow-lg shadow-primary/20 w-full sm:w-auto bg-primary hover:bg-primary/90"
             >
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Submitting...
+                  Requesting Scan...
                 </>
               ) : (
                 <>
                   <Shield className="mr-2 h-5 w-5" />
-                  Start Scan
+                  Initiate Scan
                 </>
               )}
             </Button>

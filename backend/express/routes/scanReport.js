@@ -17,6 +17,7 @@ router.get('/admin/user/:userId', validateUser, authorizeUser('admin'), scanRepo
 // Proxy scanner status/result (also stored on the ScanReport)
 router.get('/status/:scanId', validateUser, authorizeUser('admin', 'client'), scanReportController.getScanStatus);
 router.get('/result/:scanId', validateUser, authorizeUser('admin', 'client'), scanReportController.getScanResult);
+router.post('/cancel/:scanId', validateUser, authorizeUser('admin', 'client'), scanReportController.cancelScan);
 
 // Get one scan report document
 router.get('/:scanId', validateUser, authorizeUser('admin', 'client'), scanReportController.getScanReportById);

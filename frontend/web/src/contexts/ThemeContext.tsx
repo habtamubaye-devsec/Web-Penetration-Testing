@@ -27,6 +27,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setTheme(prefersDark ? 'dark' : 'light');
       document.documentElement.classList.toggle('dark', prefersDark);
     }
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== 'securityTheme') return;
+      const next = (event.newValue as Theme | null) ?? 'light';
+      if (next !== 'light' && next !== 'dark') return;
+      setTheme(next);
+      document.documentElement.classList.toggle('dark', next === 'dark');
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   const toggleTheme = () => {
@@ -37,6 +47,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return newTheme;
     });
   };
+  
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

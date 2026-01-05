@@ -6,13 +6,14 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const storedtheme = theme === 'dark' ? 'dark' : 'light';
 
   return (
     <Button
       variant="outline"
       size="icon"
       onClick={toggleTheme}
-      className="h-9 w-9"
+                    className={`h-9 w-9 ${storedtheme === 'dark' ? 'text-white' : 'text-black'}`}
     >
       {theme === 'light' ? (
         <Moon className="h-5 w-5" />
@@ -23,3 +24,5 @@ export default function ThemeToggle() {
     </Button>
   );
 }
+
+

@@ -5,6 +5,7 @@ const validator = require('validator');
 const crypto = require('crypto');
 const validatePassword = require('../utils/validatePassword');
 const sendEmail = require('../utils/sendEmail');
+const { buildPasswordResetEmail } = require('../utils/emailTemplates');
 
 const createToken = (userId, role) => {
     return jwt.sign({ id: userId, userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -187,10 +188,13 @@ exports.forgotPassword = async (req, res) => {
         console.log(user.email, resetUrl);
 
         try {
+            const email = buildPasswordResetEmail({ resetUrl });
             const result = await sendEmail({
                 to: user.email,
-                subject: 'Password Reset Request',
-                text: `You requested a password reset. Click this link to set a new password: ${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+                subject: email.subject,
+                text: email.text,
+                html: email.html,
+                ...(email.attachments?.length ? { attachments: email.attachments } : {}),
             });
 
             if (isDev && result?.mode === 'log') {

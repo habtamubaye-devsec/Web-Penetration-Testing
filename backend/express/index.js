@@ -25,11 +25,15 @@ app.use(passport.initialize());
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
 const scanRoutes = require("./routes/scanReport");
+const scanningToolRoutes = require("./routes/scanningTool");
+const scanModeRoutes = require("./routes/scanMode");
 
 // // using routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/scan", scanRoutes);
+app.use("/api/scanning-tools", scanningToolRoutes);
+app.use("/api/scan-modes", scanModeRoutes);
 
 app.get("/", (req, res) => {
   res.send("Welcome to the backend server");

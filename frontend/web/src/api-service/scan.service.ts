@@ -37,9 +37,14 @@ export type ScanResult = {
   findings: ScanFinding[];
 };
 
-export const submitScan = (scanData: unknown) => {
-  // Best-effort: if your backend exposes a scan endpoint, this will work.
-  // Otherwise, the UI will still handle errors via toast.
+export type SubmitScanRequest = {
+  url: string;
+  scan_mode_id: string;
+  custom_tools?: string[];
+};
+
+export const submitScan = (scanData: SubmitScanRequest) => {
+  alert(JSON.stringify(scanData))
   return api.post("/scan", scanData);
 };
 

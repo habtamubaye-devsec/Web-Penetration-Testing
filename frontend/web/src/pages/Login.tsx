@@ -5,7 +5,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import SocialAuthButtons from '@/components/auth/SocialAuthButtons';
@@ -71,7 +71,13 @@ export default function Login() {
     <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[80vh]">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-6">
-          <Shield className="h-12 w-12 text-primary" />
+          <img
+            src="/favicon.ico"
+            alt="Site logo"
+            width={72}
+            height={72}
+            className="h-16 w-16 md:h-[72px] md:w-[72px]"
+          />
         </div>
 
         <Card>

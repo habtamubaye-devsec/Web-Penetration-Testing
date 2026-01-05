@@ -1,37 +1,137 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Shield, ShieldAlert, ShieldCheck, FileText, Lock } from 'lucide-react';
+import {
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  FileText,
+  Lock,
+  Target,
+  Scan,
+  BarChart3,
+} from 'lucide-react';
 
 export default function Landing() {
   return (
     <div className="flex flex-col">
       {/* Hero section */}
-      <section className="relative py-20 md:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/5 dark:to-secondary/5 -z-10"></div>
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/5 dark:to-secondary/5 -z-10" />
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="flex justify-center mb-6">
-              <Shield className="h-16 w-16 text-primary" />
+          <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+            <div className="text-center lg:text-left">
+              <div className="flex justify-center lg:justify-start mb-6">
+                <img
+                  src="/favicon.ico"
+                  alt="Site logo"
+                  width={96}
+                  height={96}
+                  className="h-20 w-20 md:h-24 md:w-24"
+                />
+              </div>
+
+              <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
+                Advanced AI Enhanced Penetration Testing & Security Scanning
+              </h1>
+              <p className="mt-5 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
+                Identify vulnerabilities before attackers do. Run fast scans, customize tools, and generate clear reports your team can act on.
+              </p>
+
+              <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Link to="/register">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Start Scanning Now
+                  </Button>
+                </Link>
+                <Link to="/login">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                    Login to Dashboard
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-              Advanced AI Enhanced Penetration Testing & Security Scanning
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Identify vulnerabilities before attackers do. Our comprehensive security platform provides enterprise-grade scanning and penetration testing to keep your web assets secure.
-            </p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link to="/register">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Start Scanning Now
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Login to Dashboard
-                </Button>
-              </Link>
+
+            <div className="bg-card/60 border border-border rounded-2xl p-6 md:p-8">
+              <div className="grid gap-5">
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 dark:bg-primary/20 rounded-xl w-11 h-11 flex items-center justify-center shrink-0">
+                    <Target className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">Target validation</div>
+                    <div className="text-sm text-muted-foreground">
+                      Check URL reachability and basic security posture before scanning.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 dark:bg-primary/20 rounded-xl w-11 h-11 flex items-center justify-center shrink-0">
+                    <Scan className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">Flexible scan modes</div>
+                    <div className="text-sm text-muted-foreground">
+                      Use preset modes or select custom tools for advanced workflows.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 dark:bg-primary/20 rounded-xl w-11 h-11 flex items-center justify-center shrink-0">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="font-semibold">Actionable reporting</div>
+                    <div className="text-sm text-muted-foreground">
+                      Summaries + details to prioritize fixes and track progress over time.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-14 md:py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center mb-10">
+            <h2 className="text-3xl font-bold">How it works</h2>
+            <p className="mt-3 text-muted-foreground">A simple workflow designed for speed and clarity.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-card rounded-xl border border-border p-6">
+              <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Target className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">1) Add your target</h3>
+              <p className="text-muted-foreground">
+                Enter the URL you want to assess. We validate it before scanning.
+              </p>
+            </div>
+
+            <div className="bg-card rounded-xl border border-border p-6">
+              <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <Scan className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">2) Choose mode/tools</h3>
+              <p className="text-muted-foreground">
+                Pick a scan mode or select custom tools based on your objective.
+              </p>
+            </div>
+
+            <div className="bg-card rounded-xl border border-border p-6">
+              <div className="bg-primary/10 dark:bg-primary/20 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">3) Review reports</h3>
+              <p className="text-muted-foreground">
+                View results, severity summaries, and remediation guidance in one place.
+              </p>
             </div>
           </div>
         </div>
@@ -40,9 +140,7 @@ export default function Landing() {
       {/* Features section */}
       <section className="py-16 bg-secondary/5">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Comprehensive Security Features
-          </h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Comprehensive Security Features</h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-card rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
@@ -111,9 +209,7 @@ export default function Landing() {
       {/* CTA section */}
       <section className="py-16 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">
-            Start Securing Your Applications Today
-          </h2>
+          <h2 className="text-3xl font-bold mb-6">Start Securing Your Applications Today</h2>
           <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
             Join thousands of companies that trust AI Enhanced Penetration Testing for their penetration testing needs.
           </p>

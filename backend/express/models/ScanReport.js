@@ -1,15 +1,15 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const ScanReportSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     url: { type: String, required: true },
-    scanType: { type: String, default: 'full' },
+    scanType: { type: String, default: "full" },
     scanId: { type: String, required: true, unique: true, index: true },
     status: {
       type: String,
-      enum: ['pending', 'in-progress', 'completed', 'failed'],
-      default: 'pending',
+      enum: ["queued", "pending", "running", "completed", "failed"],
+      default: "pending",
     },
     submittedAt: { type: Date, default: Date.now },
     completedAt: { type: Date },
@@ -24,4 +24,4 @@ const ScanReportSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('ScanReport', ScanReportSchema);
+module.exports = mongoose.model("ScanReport", ScanReportSchema);

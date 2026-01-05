@@ -35,6 +35,7 @@ import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminScans from "./pages/admin/AdminScans";
 import AdminScanDetail from "./pages/admin/AdminScanDetail";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminScanningTools from "./pages/admin/AdminScanningTools";
 
 // Route Guards
 import ProtectedRoute from "./components/common/ProtectedRoute";
@@ -63,7 +64,7 @@ const App = () => (
               </Route>
 
               {/* Protected user routes */}
-              <Route 
+              <Route
                 element={
                   <ProtectedRoute>
                     <DashboardLayout />
@@ -73,12 +74,12 @@ const App = () => (
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/scan" element={<ScanSubmission />} />
                 <Route path="/scan-history" element={<ScanHistory />} />
-                <Route path="/scan-result/:scanId" element={<ScanResult />} />
+                <Route path="/scan-history/scan-result/:scanId" element={<ScanResult />} />
                 <Route path="/profile" element={<UserProfile />} />
               </Route>
 
               {/* Admin routes */}
-              <Route 
+              <Route
                 element={
                   <AdminRoute>
                     <DashboardLayout />
@@ -90,13 +91,14 @@ const App = () => (
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
                 <Route path="/admin/scans" element={<AdminScans />} />
                 <Route path="/admin/scans/:scanId" element={<AdminScanDetail />} />
+                <Route path="/admin/tools" element={<AdminScanningTools />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
               </Route>
 
               {/* Redirect to dashboard if user is logged in */}
-              <Route 
-                path="/redirect" 
-                element={<Navigate to="/dashboard" />} 
+              <Route
+                path="/redirect"
+                element={<Navigate to="/dashboard" />}
               />
 
               {/* Catch all route */}

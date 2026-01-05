@@ -3,56 +3,94 @@ const crypto = require('crypto');
 const validator = require('validator');
 
 const ScanReport = require('../models/ScanReport');
+const ScanningTool = require('../models/ScanningTool');
+const ScanMode = require('../models/ScanMode');
+
+const normalizeToolType = (value) => String(value || '').trim();
+
+// Keep this list in sync with Laravel's ScanRequest validation rules.
+const SCANNER_CUSTOM_OPTION_KEYS = ['network', 'firewall', 'ssl', 'http', 'waf', 'headers'];
 
 const getScannerBaseUrl = () => {
-  return String(process.env.SCANNER_BASE_URL || 'http://192.168.216.2:8000').replace(/\/$/, '');
+  return String(process.env.SCANNER_BASE_URL || 'https://api.pentester.pro.et').replace(/\/$/, '');
 };
 
 const generateScanId = () => {
-  // Short, URL-safe scan id
-  return `scan_${crypto.randomBytes(12).toString('hex')}`;
+  return crypto.randomUUID();
 };
 
 exports.submitScan = async (req, res) => {
   try {
-    const { url, scan_type } = req.body || {};
-    const scanType = String(scan_type || 'full').trim() || 'full';
+    const { url, scan_mode_id, custom_tools } = req.body || {};
+    console.log('Received scan submission:', req.body);
     const normalizedUrl = String(url || '').trim();
 
     if (!normalizedUrl) {
       return res.status(400).json({ status: 'failed', message: 'URL is required' });
     }
 
-    // Accept http(s) URLs only
     if (!validator.isURL(normalizedUrl, { require_protocol: true, protocols: ['http', 'https'] })) {
       return res.status(400).json({ status: 'failed', message: 'Please provide a valid URL (include http/https)' });
     }
 
+    const mode = await ScanMode.findById(scan_mode_id);
+    if (!mode) {
+      return res.status(400).json({ status: 'failed', message: 'Invalid scan mode selected' });
+    }
+
     const scanId = generateScanId();
+    const payload = {
+      scan_id: scanId,
+      url: normalizedUrl,
+      scan_type: mode.scanType,
+      callback_url: process.env.SCANNER_CALLBACK_URL || undefined,
+    };
+
+    if (mode.scanType === 'custom') {
+      if (!custom_tools || !Array.isArray(custom_tools)) {
+        return res.status(400).json({ status: 'failed', message: 'Custom tools are required for custom scan' });
+      }
+
+      const tools = await ScanningTool.find({ _id: { $in: custom_tools }, isActive: true });
+
+      // Build explicit true/false flags using the scanner API's supported keys.
+      // The selected tool IDs determine which flags become true.
+      const customOptions = SCANNER_CUSTOM_OPTION_KEYS.reduce((acc, key) => {
+        acc[key] = false;
+        return acc;
+      }, {});
+
+      tools.forEach((tool) => {
+        const key = normalizeToolType(tool.type);
+        if (!key) return;
+        if (SCANNER_CUSTOM_OPTION_KEYS.includes(key)) {
+          customOptions[key] = true;
+        }
+      });
+
+      customOptions.intensity = req.body.intensity || 'medium';
+      payload.custom_options = customOptions;
+    }
+
     const report = await ScanReport.create({
       user: req.user._id,
       url: normalizedUrl,
-      scanType,
+      scanType: mode.scanType,
       scanId,
       status: 'pending',
     });
 
-    const payload = {
-      url: normalizedUrl,
-      scan_type: scanType,
-      scan_id: scanId,
-      callback_url: process.env.SCANNER_CALLBACK_URL || undefined,
-    };
+    console.log(payload);
 
     const scannerBase = getScannerBaseUrl();
 
     try {
-      const response = await axios.post(`${scannerBase}/api/scan`, payload, {
+      const response = await axios.post(`${scannerBase}/api/v1/scan`, payload, {
         headers: { 'Content-Type': 'application/json' },
         timeout: 20_000,
       });
 
-      report.status = 'in-progress';
+      report.status = response.data.status || 'queued';
       report.submitResponse = response.data;
       await report.save();
 
@@ -88,16 +126,17 @@ exports.getScanStatus = async (req, res) => {
       return res.status(400).json({ status: 'failed', message: 'scanId is required' });
     }
 
-    const report = await ScanReport.findOne({ scanId, user: req.user._id });
+    const report = await ScanReport.findOne({ scanId });
     if (!report) {
       return res.status(404).json({ status: 'failed', message: 'Scan report not found' });
     }
 
     const scannerBase = getScannerBaseUrl();
-    const response = await axios.get(`${scannerBase}/api/scan/status/${encodeURIComponent(scanId)}`, {
+    const response = await axios.get(`${scannerBase}/api/v1/scan/status/${encodeURIComponent(scanId)}`, {
       timeout: 20_000,
     });
 
+    report.status = response.data.status;
     report.statusResponse = response.data;
     await report.save();
 
@@ -114,24 +153,52 @@ exports.getScanResult = async (req, res) => {
       return res.status(400).json({ status: 'failed', message: 'scanId is required' });
     }
 
-    const report = await ScanReport.findOne({ scanId, user: req.user._id });
+    const report = await ScanReport.findOne({ scanId });
     if (!report) {
       return res.status(404).json({ status: 'failed', message: 'Scan report not found' });
     }
 
     const scannerBase = getScannerBaseUrl();
-    const response = await axios.get(`${scannerBase}/api/scan/result/${encodeURIComponent(scanId)}`, {
+    const response = await axios.get(`${scannerBase}/api/v1/scan/result/${encodeURIComponent(scanId)}`, {
       timeout: 20_000,
     });
 
     report.resultResponse = response.data;
-    report.status = 'completed';
-    report.completedAt = new Date();
+    report.status = response.data.status || 'completed';
+    if (report.status === 'completed') {
+      report.completedAt = new Date();
+    }
     await report.save();
 
     return res.status(200).json({ status: 'success', data: response.data });
   } catch (err) {
     return res.status(500).json({ status: 'error', message: 'Failed to fetch scan result', error: err.message });
+  }
+};
+
+exports.cancelScan = async (req, res) => {
+  try {
+    const scanId = String(req.params.scanId || '').trim();
+    if (!scanId) {
+      return res.status(400).json({ status: 'failed', message: 'scanId is required' });
+    }
+
+    const report = await ScanReport.findOne({ scanId });
+    if (!report) {
+      return res.status(404).json({ status: 'failed', message: 'Scan report not found' });
+    }
+
+    const scannerBase = getScannerBaseUrl();
+    const response = await axios.post(`${scannerBase}/api/v1/scan/cancel/${encodeURIComponent(scanId)}`, {}, {
+      timeout: 20_000,
+    });
+
+    report.status = 'cancelled';
+    await report.save();
+
+    return res.status(200).json({ status: 'success', data: response.data });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: 'Failed to cancel scan', error: err.message });
   }
 };
 

@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Shield } from 'lucide-react';
 import ThemeToggle from '@/components/common/ThemeToggle';
 
 export default function PublicLayout() {
@@ -11,7 +10,13 @@ export default function PublicLayout() {
       <header className="bg-background border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2">
-            <Shield className="h-8 w-8 text-primary" />
+            <img
+              src="/favicon.ico"
+              alt="Site logo"
+              width={32}
+              height={32}
+              className="h-8 w-8"
+            />
             <span className="text-xl font-bold">AI Enhanced Penetration Testing</span>
           </Link>
 
